@@ -1,0 +1,133 @@
+{
+  "n_development_stations": 150,
+  "n_station_days": 36296,
+  "mda8_ppb_mean": 42.99663874807141,
+  "mda8_ppb_sd": 11.894996927007663,
+  "share_days_over_70ppb": 0.007411284990081552,
+  "per_station_acf1_median": 0.7071446464664014,
+  "pooled_rows_raw": 25309,
+  "pooled_rows_anomaly": 25309,
+  "per_station_band": 0.12521980673998823,
+  "acf_pacf": [
+    {
+      "lag": 1,
+      "acf_raw": 0.669,
+      "pacf_raw": 0.667,
+      "acf_anomaly": 0.474,
+      "pacf_anomaly": 0.475
+    },
+    {
+      "lag": 2,
+      "acf_raw": 0.463,
+      "pacf_raw": 0.022,
+      "acf_anomaly": 0.141,
+      "pacf_anomaly": -0.11
+    },
+    {
+      "lag": 3,
+      "acf_raw": 0.389,
+      "pacf_raw": 0.122,
+      "acf_anomaly": 0.016,
+      "pacf_anomaly": -0.008
+    },
+    {
+      "lag": 4,
+      "acf_raw": 0.361,
+      "pacf_raw": 0.087,
+      "acf_anomaly": -0.031,
+      "pacf_anomaly": -0.029
+    },
+    {
+      "lag": 5,
+      "acf_raw": 0.362,
+      "pacf_raw": 0.108,
+      "acf_anomaly": -0.031,
+      "pacf_anomaly": 0.001
+    },
+    {
+      "lag": 6,
+      "acf_raw": 0.364,
+      "pacf_raw": 0.083,
+      "acf_anomaly": -0.036,
+      "pacf_anomaly": -0.02
+    },
+    {
+      "lag": 7,
+      "acf_raw": 0.357,
+      "pacf_raw": 0.061,
+      "acf_anomaly": -0.047,
+      "pacf_anomaly": -0.026
+    },
+    {
+      "lag": 8,
+      "acf_raw": 0.369,
+      "pacf_raw": 0.091,
+      "acf_anomaly": -0.024,
+      "pacf_anomaly": 0.012
+    },
+    {
+      "lag": 9,
+      "acf_raw": 0.368,
+      "pacf_raw": 0.051,
+      "acf_anomaly": -0.025,
+      "pacf_anomaly": -0.023
+    },
+    {
+      "lag": 10,
+      "acf_raw": 0.347,
+      "pacf_raw": 0.019,
+      "acf_anomaly": -0.065,
+      "pacf_anomaly": -0.061
+    },
+    {
+      "lag": 11,
+      "acf_raw": 0.328,
+      "pacf_raw": 0.029,
+      "acf_anomaly": -0.098,
+      "pacf_anomaly": -0.055
+    },
+    {
+      "lag": 12,
+      "acf_raw": 0.337,
+      "pacf_raw": 0.07,
+      "acf_anomaly": -0.082,
+      "pacf_anomaly": -0.01
+    },
+    {
+      "lag": 13,
+      "acf_raw": 0.325,
+      "pacf_raw": 0.012,
+      "acf_anomaly": -0.092,
+      "pacf_anomaly": -0.06
+    },
+    {
+      "lag": 14,
+      "acf_raw": 0.306,
+      "pacf_raw": 0.011,
+      "acf_anomaly": -0.11,
+      "pacf_anomaly": -0.061
+    }
+  ],
+  "cluster_profile_means": {
+    "0": {
+      "mean_winter": 36.12,
+      "mean_spring": 50.55,
+      "mean_summer": 55.8,
+      "mean_fall": 54.11,
+      "sd": 10.64,
+      "acf1": 0.83,
+      "latitude": 37.16,
+      "longitude": -111.85
+    },
+    "1": {
+      "mean_winter": 32.64,
+      "mean_spring": 42.63,
+      "mean_summer": 42.98,
+      "mean_fall": 37.42,
+      "sd": 10.81,
+      "acf1": 0.65,
+      "latitude": 37.54,
+      "longitude": -85.29
+    }
+  }
+}

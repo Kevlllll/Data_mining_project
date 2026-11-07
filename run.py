@@ -5,6 +5,7 @@
     python run.py explore    # Step 4: EDA on development data -> outputs/explore/, outputs/figures/
     python run.py develop    # Steps 5-7: features, cross-validation, one-SE selection
     python run.py finalize   # Step 8: refit selected models on all development rows, freeze
+    python run.py sensitivity  # CV with 3/5/7/10-day history windows (development data only)
     python run.py all        # audit -> finalize (never runs evaluate)
 
     python run.py evaluate   # Step 9: ONE-TIME final test on frozen models
@@ -17,7 +18,8 @@ import pandas as pd
 import joblib
 
 from src.common import load_config, out_dir, read_json, write_json
-from src import data, evaluation, explore, features, figures, models, splits, validation
+from src import (data, evaluation, explore, features, figures, models, sensitivity, splits,
+                 validation)
 
 
 def stage_audit(cfg):
@@ -95,6 +97,10 @@ def stage_develop(cfg):
         od / "candidate_scores.csv", index=False)
     selection.to_csv(od / "selection.csv", index=False)
     primary = validation.designate_primary(selection, summary)
+    paired = validation.paired_differences(
+        scores, selection.set_index("family").loc[primary, "selected_id"],
+        list(selection["best_id"]) + list(selection["selected_id"]))
+    paired.to_csv(od / "paired_vs_primary.csv", index=False)
     selected = dict(zip(selection["family"], selection["selected_id"]))
     write_json({"selected": selected, "primary_model": primary,
                 "rule": ("one-SE within each family on CV station-macro MAE; primary = one-SE "
@@ -110,6 +116,7 @@ def stage_develop(cfg):
     extra = figures.shrinkage_paths(dev, cand_by_id, selection, fig / "shrinkage_paths.png")
     extra.update(figures.ridge_loocv_crosscheck(dev, cand_by_id, selection, cfg))
     figures.spline_smoothness(dev, cand_by_id, selection, fig / "spline_smoothness.png")
+    figures.feature_set_comparison(summary, fig / "feature_sets.png")
     write_json({"n_development_rows": len(dev), "n_development_stations": dev["station_id"].nunique(),
                 "n_candidates": len(cands), "n_cv_cells": int(scores[["station_group", "day_fold"]]
                                                                .drop_duplicates().shape[0]),
@@ -157,8 +164,23 @@ def stage_evaluate(cfg):
     print(pd.read_csv(od / "metrics_overall.csv").to_string(index=False))
 
 
+def stage_sensitivity(cfg):
+    od = out_dir(cfg, "sensitivity")
+    panel = pd.read_parquet(out_dir(cfg, "audit") / "daily_panel.parquet")
+    station_split, roles, _ = load_splits(cfg)
+    summary, best, coverage = sensitivity.run(panel, station_split, roles, cfg)
+    summary.assign(params=summary["params"].map(json.dumps)).sort_values(["window", "cv_mae"]).to_csv(
+        od / "window_candidate_scores.csv", index=False)
+    best.to_csv(od / "window_best.csv", index=False)
+    coverage.to_csv(od / "window_coverage.csv", index=False)
+    sensitivity.window_figure(summary, out_dir(cfg, "figures") / "window_sensitivity.png")
+    print(coverage.to_string(index=False))
+    print(best[["window", "family", "selected_id", "selected_cv_mae", "best_id", "best_cv_mae",
+                "best_cv_se", "primary"]].round(3).to_string(index=False))
+
+
 STAGES = {"audit": stage_audit, "split": stage_split, "explore": stage_explore,
-          "develop": stage_develop, "finalize": stage_finalize}
+          "develop": stage_develop, "finalize": stage_finalize, "sensitivity": stage_sensitivity}
 ONE_TIME = {"evaluate": stage_evaluate}
 
 if __name__ == "__main__":

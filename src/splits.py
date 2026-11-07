@@ -17,12 +17,15 @@ EARTH_RADIUS_KM = 6371.0
 
 # ---------------------------------------------------------------- date split
 def draw_test_blocks(cfg):
-    """One contiguous test block per season, drawn with the fixed seed.
+    """One contiguous test block per season.
 
-    A block (plus its embargo, except for the last season) must fit inside its
-    season window, so blocks and embargoes never overlap the next season's window.
+    If the config lists `locked_test_blocks` (start dates), those are used and
+    checked; otherwise blocks are drawn with the fixed seed. A drawn block (plus
+    its embargo, except for the last season) fits inside its season window.
     Depends only on the config, not on the data.
     """
+    if "locked_test_blocks" in cfg:
+        return locked_test_blocks(cfg)
     rng = np.random.default_rng(cfg["random_seed"])
     L, E = cfg["test_block_days"], cfg["embargo_days"]
     seasons = list(cfg["season_windows"])
@@ -35,6 +38,22 @@ def draw_test_blocks(cfg):
             raise ValueError(f"season window {season} too short for block+embargo")
         start = a + pd.Timedelta(days=int(rng.integers(0, n_starts)))
         blocks[season] = pd.date_range(start, periods=L, freq="D")
+    return blocks
+
+
+def locked_test_blocks(cfg):
+    L, E, P = cfg["test_block_days"], cfg["embargo_days"], cfg["max_lag_days"]
+    blocks = {s: pd.date_range(cfg["locked_test_blocks"][s], periods=L, freq="D")
+              for s in cfg["season_windows"]}
+    first = pd.Timestamp(cfg["study_start"]) + pd.Timedelta(days=P)
+    ends = [b[-1] + pd.Timedelta(days=E) for b in blocks.values()]
+    starts = [b[0] for b in blocks.values()]
+    if starts[0] < first:
+        raise ValueError("first test block starts before the burn-in ends")
+    if any(e >= s for e, s in zip(ends[:-1], starts[1:])):
+        raise ValueError("a test block's embargo runs into the next test block")
+    if blocks[list(blocks)[-1]][-1] > pd.Timestamp(cfg["study_end"]):
+        raise ValueError("last test block runs past the study end")
     return blocks
 
 

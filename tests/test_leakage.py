@@ -174,3 +174,22 @@ def test_spline_linear_extrapolation():
     knots_before = st.bsplines_[0].t.copy()
     st.transform(np.array([[500.0]]))
     assert np.array_equal(knots_before, st.bsplines_[0].t)
+
+
+def test_locked_test_blocks_are_used_and_checked():
+    locked = {**CFG, "locked_test_blocks": {"a": "2024-01-20", "b": "2024-03-01"}}
+    blocks = splits.draw_test_blocks(locked)
+    assert blocks["a"][0] == pd.Timestamp("2024-01-20") and len(blocks["b"]) == CFG["test_block_days"]
+    with pytest.raises(ValueError):  # embargo after block a would run into block b
+        splits.draw_test_blocks({**CFG, "locked_test_blocks": {"a": "2024-02-20", "b": "2024-03-01"}})
+    with pytest.raises(ValueError):  # block before the burn-in ends
+        splits.draw_test_blocks({**CFG, "locked_test_blocks": {"a": "2024-01-03", "b": "2024-03-01"}})
+
+
+def test_naive_blend_is_average_of_today_and_rolling_mean():
+    X = pd.DataFrame({"lag1": [40.0, 10.0], "roll_mean7": [30.0, 20.0]})
+    c = next(c for c in models.candidates({**CFG, "grids": {"ridge_alpha": [], "lasso_alpha": [],
+                                                            "spline_n_knots": [], "spline_alpha": [],
+                                                            "knn_k": [], "pcr_feature_set": "F2"}},
+                                          make_station_split()) if c["family"] == "naive_blend")
+    assert np.allclose(models.build(c).fit(X, None).predict(X), [35.0, 15.0])

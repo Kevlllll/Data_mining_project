@@ -18,13 +18,13 @@
     ]
   },
   "day_counts": {
-    "development": 211,
+    "development": 196,
+    "embargo": 40,
     "test": 28,
-    "embargo": 28,
-    "burn_in": 7
+    "burn_in": 10
   },
-  "embargo_days": 7,
-  "max_lag_days": 7,
+  "embargo_days": 10,
+  "max_lag_days": 10,
   "stations": {
     "n_eligible": 188,
     "k": 2,
@@ -45,5 +45,5 @@
     }
   },
   "seed": 42,
-  "config_sha256": "82ce88ea86f6de61f1a6f33f58644eac43ab84e9d1dbd83dd4e03415c820c4ec"
+  "config_sha256": "cee5c149c3681f8a621fe0cf8c3396328a2ab92a28381aa32209a454532ae4d5"
 }

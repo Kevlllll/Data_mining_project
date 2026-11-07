@@ -14,6 +14,6 @@ Project*.pdf
 daily_44201_2024.csv
 
 # Large or regenerable pipeline outputs (rerun `python run.py all`)
-outputs/**/*.parquet
-outputs/models/
-outputs/**/*predictions*.csv
+outputs*/**/*.parquet
+outputs*/models/
+outputs*/**/*predictions*.csv

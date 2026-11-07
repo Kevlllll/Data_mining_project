@@ -1,0 +1,16 @@
+feature,description,in_feature_sets
+lag1,"MDA8 (ppb) on day t-0, i.e. 1 day(s) before the target date","F1,F2,F3,F4"
+roll_mean7,mean MDA8 over t-6..t (all 7 days required),"F2,F3,F4"
+roll_sd7,SD (ddof=1) of MDA8 over t-6..t (all 7 days required),"F2,F3,F4"
+doy_sin,sin(2*pi*day_of_year(target_date)/366),"F3,F4"
+doy_cos,cos(2*pi*day_of_year(target_date)/366),"F3,F4"
+latitude,station latitude,"F3,F4"
+longitude,station longitude,"F3,F4"
+cluster_1,1 if station is in feature cluster 1 (cluster 0 is the reference),"F3,F4"
+nbr_mean,mean MDA8 on day t at the k nearest development stations reporting that day (self excluded),F4
+lag2,"MDA8 (ppb) on day t-1, i.e. 2 day(s) before the target date","F1,F2,F3,F4"
+lag3,"MDA8 (ppb) on day t-2, i.e. 3 day(s) before the target date","F1,F2,F3,F4"
+lag4,"MDA8 (ppb) on day t-3, i.e. 4 day(s) before the target date","F1,F2,F3,F4"
+lag5,"MDA8 (ppb) on day t-4, i.e. 5 day(s) before the target date","F1,F2,F3,F4"
+lag6,"MDA8 (ppb) on day t-5, i.e. 6 day(s) before the target date","F1,F2,F3,F4"
+lag7,"MDA8 (ppb) on day t-6, i.e. 7 day(s) before the target date","F1,F2,F3,F4"

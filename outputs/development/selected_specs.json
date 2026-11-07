@@ -1,14 +1,15 @@
 {
   "selected": {
-    "pcr": "pcr|F4|p7|n_components=14",
+    "pcr": "pcr|F4|p10|n_components=17",
     "ols": "ols|F2|p1",
-    "ridge": "ridge|F2|p1|alpha=316",
-    "lasso": "lasso|F2|p1|alpha=0.1",
-    "spline": "spline|F2|p1|n_knots=4_alpha=1",
+    "ridge": "ridge|F2|p1|alpha=1000",
+    "lasso": "lasso|F2|p1|alpha=0.316",
+    "spline": "spline|F2|p1|n_knots=4_alpha=10",
+    "naive_blend": "naive_blend",
     "knn": "knn|F2|p1|k=200",
     "persistence": "persistence"
   },
   "primary_model": "ols",
   "rule": "one-SE within each family on CV station-macro MAE; primary = one-SE across the family selections, fewest inputs, then fewest tuning parameters",
-  "config_sha256": "82ce88ea86f6de61f1a6f33f58644eac43ab84e9d1dbd83dd4e03415c820c4ec"
+  "config_sha256": "cee5c149c3681f8a621fe0cf8c3396328a2ab92a28381aa32209a454532ae4d5"
 }

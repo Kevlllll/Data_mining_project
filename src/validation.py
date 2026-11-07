@@ -6,7 +6,7 @@ from joblib import Parallel, delayed
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 
-from .models import build
+from .models import BASELINES, build
 from .splits import cv_cells
 
 
@@ -111,7 +111,7 @@ def designate_primary(selection, summary):
     """One-SE rule again, across the families' selected specs: among those within
     one SE of the best selected CV MAE, take the one with the fewest model inputs
     (PCR counts its components), then the family with fewer tuning parameters."""
-    s = selection[selection["family"] != "persistence"].merge(
+    s = selection[~selection["family"].isin(BASELINES)].merge(
         summary[["candidate_id", "n_features", "params"]], left_on="selected_id",
         right_on="candidate_id")
     s["n_inputs"] = [p.get("n_components", n) for p, n in zip(s["params"], s["n_features"])]
@@ -119,3 +119,20 @@ def designate_primary(selection, summary):
     within = s[s["selected_cv_mae"] <= best["selected_cv_mae"] + best["selected_cv_se"]].copy()
     within["rank"] = within["family"].map(FAMILY_ORDER.index)
     return within.sort_values(["n_inputs", "rank"]).iloc[0]["family"]
+
+
+def paired_differences(scores, ref_id, other_ids):
+    """Compare candidates cell by cell (same validation rows). Positive mean_diff =
+    the other candidate has LOWER error than the reference. Cells that share days
+    are correlated, so the paired SE is approximate."""
+    piv = scores.pivot_table(index=["station_group", "day_fold"], columns="candidate_id",
+                             values="station_macro_mae")
+    rows = []
+    for oid in dict.fromkeys(other_ids):
+        if oid == ref_id:
+            continue
+        d = piv[ref_id] - piv[oid]
+        rows.append({"reference": ref_id, "other": oid, "mean_diff": d.mean(),
+                     "paired_se": d.std() / np.sqrt(len(d)), "z": d.mean() / (d.std() / np.sqrt(len(d))),
+                     "cells_other_better": int((d > 0).sum()), "n_cells": len(d)})
+    return pd.DataFrame(rows)

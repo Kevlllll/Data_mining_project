@@ -9,6 +9,8 @@ from scipy.interpolate import make_smoothing_spline
 from sklearn.linear_model import Lasso, Ridge, RidgeCV
 from sklearn.preprocessing import SplineTransformer, StandardScaler
 
+from .models import BASELINES
+
 
 def _lags(p):
     return "lag 1 only" if p == 1 else f"lags 1..{p}"
@@ -43,11 +45,13 @@ def cv_curves(summary, selection, fig_path):
     # last panel: best CV MAE per family x feature set
     ax = axes.flat[-1]
     best = summary.groupby(["family", "feature_set"])["cv_mae"].min().unstack()
-    best = best.drop(index=[f for f in ("persistence",) if f in best.index], errors="ignore")
+    best = best.drop(index=[f for f in BASELINES if f in best.index]).drop(columns="-", errors="ignore")
     for i, (fam, row) in enumerate(best.iterrows()):
         ax.plot(row.index, row.values, marker="o", label=fam)
     pers = summary.loc[summary["family"] == "persistence", "cv_mae"].iloc[0]
+    blend = summary.loc[summary["family"] == "naive_blend", "cv_mae"].iloc[0]
     ax.axhline(pers, c="k", ls="--", label="persistence")
+    ax.axhline(blend, c="grey", ls="-.", label="naive blend (no fitting)")
     ax.set(title="Best CV MAE by feature set", ylabel="CV station-macro MAE (ppb)")
     ax.legend(fontsize=7)
     fig.tight_layout(); fig.savefig(fig_path, dpi=150); plt.close(fig)
@@ -123,4 +127,32 @@ def spline_smoothness(dev, cand_by_id, selection, fig_path):
     axes[1].set(title="Smoothing spline (scipy make_smoothing_spline, GCV)",
                 xlabel="today's MDA8 (ppb)", ylabel="tomorrow's MDA8 (ppb)")
     axes[1].legend(fontsize=8)
+    fig.tight_layout(); fig.savefig(fig_path, dpi=150); plt.close(fig)
+
+
+def feature_set_comparison(summary, fig_path):
+    """CV MAE by feature set, one line per lag choice: OLS (left) and kNN (right)."""
+    pers = summary.loc[summary["family"] == "persistence", "cv_mae"].iloc[0]
+    blend_row = summary[summary["family"] == "naive_blend"].iloc[0]
+    blend = blend_row["cv_mae"]
+    R = int(summary["p"].max())  # the longest lag set equals the rolling window
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+    for ax, fam in zip(axes, ["ols", "knn"]):
+        s = summary[summary["family"] == fam]
+        best = s.loc[s.groupby(["feature_set", "p"])["cv_mae"].idxmin()]
+        for i, (p, g) in enumerate(best.groupby("p")):
+            g = g.sort_values("feature_set")
+            ax.errorbar([x + (i - 1) * 0.06 for x in range(len(g))], g["cv_mae"], yerr=g["cv_se"],
+                        marker="o", capsize=3, label=_lags(p))
+        ax.axhline(pers, c="k", ls="--", lw=1, label=f"persistence ({pers:.2f})")
+        ax.axhline(blend, c="grey", ls="-.", lw=1, label=f"naive blend, no fitting ({blend:.2f})")
+        ax.set_xticks(range(4), ["F1\npast days", f"F2\n+ {R}-day avg & SD",
+                                 "F3\n+ season, location,\ncluster", "F4\n+ nearby stations"])
+        ax.set(ylabel="CV station-average MAE (ppb), lower is better",
+               title=f"{'OLS' if fam == 'ols' else 'kNN (best k)'}: error by feature set")
+        ax.legend(fontsize=8, loc="upper right" if fam == "ols" else "upper left")
+    ols = summary[summary["family"] == "ols"].set_index(["feature_set", "p"])["cv_mae"]
+    axes[0].annotate(f"the one big gain:\n{ols[('F1', 1)]:.2f} -> {ols[('F2', 1)]:.2f}",
+                     xy=(1, ols[("F2", 1)]), xytext=(0.25, ols[("F2", 1)] + 0.2),
+                     arrowprops={"arrowstyle": "->"}, fontsize=9)
     fig.tight_layout(); fig.savefig(fig_path, dpi=150); plt.close(fig)

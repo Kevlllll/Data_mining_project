@@ -24,10 +24,29 @@ class Persistence:
         return np.asarray(X["lag1"], dtype=float)
 
 
+class NaiveBlend:
+    """prediction = (today + rolling mean) / 2. A no-fit baseline that captures
+    pull-toward-the-weekly-level without estimating anything."""
+
+    def __init__(self, mean_col):
+        self.mean_col = mean_col
+
+    def fit(self, X, y):
+        return self
+
+    def predict(self, X):
+        return 0.5 * np.asarray(X["lag1"], dtype=float) + 0.5 * np.asarray(X[self.mean_col], dtype=float)
+
+
+BASELINES = ("persistence", "naive_blend")
+
+
 def build(c):
     fam, prm = c["family"], c["params"]
     if fam == "persistence":
         return Persistence()
+    if fam == "naive_blend":
+        return NaiveBlend(c["columns"][1])
     if fam == "ols":
         return LinearRegression()
     if fam == "ridge":
@@ -53,6 +72,9 @@ def candidates(cfg, station_split):
     g = cfg["grids"]
     out = [dict(id="persistence", family="persistence", fs="-", p=1, columns=["lag1"],
                 params={}, complexity=(0,))]
+    R = cfg["rolling_window_days"]
+    out.append(dict(id="naive_blend", family="naive_blend", fs="-", p=1,
+                    columns=["lag1", f"roll_mean{R}"], params={}, complexity=(0,)))
 
     def add(family, fs, p, params, complexity):
         cols = feature_columns(fs, p, cfg, station_split)

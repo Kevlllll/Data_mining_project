@@ -13,13 +13,17 @@
   "study_start": "2024-01-01",
   "study_end": "2024-09-30",
   "forecast_horizon_days": 1,
-  "max_lag_days": 7,
-  "rolling_window_days": 7,
+  "max_lag_days": 10,
+  "rolling_window_days": 10,
 
   "test_block_days": 7,
-  "embargo_days": 7,
+  "embargo_days": 10,
+  "locked_test_blocks": {
+    "_note": "drawn with seed 42 in v3.0 (7-day embargo); fixed here so changing the window never redraws them",
+    "winter": "2024-01-11", "spring": "2024-05-01", "summer": "2024-07-22", "fall": "2024-09-11"
+  },
   "season_windows": {
-    "winter": ["2024-01-08", "2024-02-29"],
+    "winter": ["2024-01-11", "2024-02-29"],
     "spring": ["2024-03-01", "2024-05-31"],
     "summer": ["2024-06-01", "2024-08-31"],
     "fall":   ["2024-09-01", "2024-09-30"]
@@ -31,7 +35,7 @@
   "neighbor_k": 5,
 
   "cv": {"n_station_groups": 5, "n_day_folds": 5, "day_block_days": 14},
-  "lag_sets": [1, 3, 7],
+  "lag_sets": [1, 3, 7, 10],
   "feature_sets": ["F1", "F2", "F3", "F4"],
   "grids": {
     "ridge_alpha": [0.01, 0.0316, 0.1, 0.316, 1, 3.16, 10, 31.6, 100, 316, 1000, 3162, 10000],

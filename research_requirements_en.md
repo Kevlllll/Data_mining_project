@@ -1,10 +1,10 @@
 # Research Requirements for Next-Day Ozone Forecasting
 
-Version: v3.0 (decisions locked; replaces v2.0)
+Version: v3.1 (10-day history window; replaces v3.0; changes listed in §17)
 Updated: 2026-11-06
 Course: Data Mining, SDS 4971/5805, Final Project
 
-v3.0 replaces the v2.0 placeholders with what the data audit found, the decisions the group made,
+v3.0 replaced the v2.0 placeholders with what the data audit found, the decisions the group made,
 and the methods taught in the course slides. Every number below comes from `python run.py all`
 with `config.json` as committed. Changing a value means editing `config.json` and documenting it
 here **before** the final test runs.
@@ -31,9 +31,9 @@ optional exceedance classifier are dropped; §11 explains why.
 |---|---|---|
 | Target | MDA8 ozone on day t+1, in ppb (`1st Max Value` × 1000) | §4 |
 | Study window | 2024-01-01 – 2024-09-30 (October excluded: only 80 stations report) | §3 |
-| Maximum lag | 7 days (confirmed by ACF/PACF, §7) | `max_lag_days` |
-| Test design | One 7-day block per season, drawn with seed 42 | §6.1 |
-| Embargo | 7 days after each test block (= maximum lag) | §6.1 |
+| History window | 10 days: lags 1..10, rolling mean/SD over 10 days (chosen by CV, §7) | `max_lag_days`, `rolling_window_days` |
+| Test design | One 7-day block per season, drawn with seed 42 in v3.0, now fixed in `locked_test_blocks` | §6.1 |
+| Embargo | 10 days after each test block (= history window) | §6.1 |
 | Stations | 188 eligible; 150 development, 38 held out (20%, stratified by cluster) | §6.2 |
 | Selection | Blocked, station-grouped CV; one-standard-error rule | §9 |
 | Primary metric | Station-macro MAE (mean of per-station MAEs) | §9 |
@@ -91,26 +91,28 @@ Result: `daily_panel.parquet`, with one row per station × date (229,927 rows).
 ### 6.1 Dates: seasonal test blocks with embargo
 
 The group wanted every season tested, not just the end of the series. One contiguous **7-day test
-block per season** is drawn uniformly within its season window (seed 42). Each block plus its
-embargo must fit inside its window.
+block per season** was drawn uniformly within its season window (seed 42, in v3.0). The dates are
+now written into `config.json` (`locked_test_blocks`), so changing the window can never redraw them.
+The code checks that the first block starts after the burn-in and that no embargo runs into the next block.
 
 | Season | Window | Test block |
 |---|---|---|
-| Winter | Jan 8 – Feb 29 | **Jan 11–17** |
+| Winter | Jan 11 – Feb 29 | **Jan 11–17** |
 | Spring | Mar 1 – May 31 | **May 1–7** |
 | Summer | Jun 1 – Aug 31 | **Jul 22–28** |
 | Fall | Sep 1 – Sep 30 | **Sep 11–17** |
 
 - **Why 7 days:** each block covers every weekday once (ozone has a weekday/weekend pattern). The
   block length is independent of the lag.
-- **Embargo:** inputs reach back 7 days, so a training row whose target is within 7 days after a
-  test block would carry test-day values as inputs. Those 28 days are removed from training. No
+- **Embargo:** inputs reach back 10 days, so a training row whose target is within 10 days after a
+  test block would carry test-day values as inputs. Those 40 days are removed from training. No
   gap is needed *before* a block, because a test row using pre-block history is ordinary forecasting.
-- **Burn-in:** Jan 1–7 have no complete 7-day history, so they are not targets.
-- **Day budget (274 days):** 211 development + 28 test + 28 embargo + 7 burn-in, so training vs
-  test is about **88/12**. An exact 90/10 split isn't possible with four whole blocks, because
+- **Burn-in:** Jan 1–10 have no complete 10-day history, so they are not targets. The winter test
+  block starts on Jan 11, the first day with full history.
+- **Day budget (274 days):** 196 development + 28 test + 40 embargo + 10 burn-in, so training vs
+  test is about **87.5/12.5**. An exact 90/10 split isn't possible with four whole blocks, because
   embargo and burn-in are fixed costs.
-- **Why blocks, not scattered days:** each isolated test day would need its own 7-day embargo,
+- **Why blocks, not scattered days:** each isolated test day would need its own 10-day embargo,
   which would remove most of the training data.
 - **Caveat (must be stated in the report):** development includes days after some test blocks, so
   this measures accuracy across seasons rather than a pure forward-in-time forecast. §10 adds a
@@ -130,6 +132,9 @@ embargo must fit inside its window.
   are 4–176 km from the nearest development station (median 26 km).
 - **Cluster feature:** the scaler and centroids are re-fitted on the **150 development stations
   only**. Held-out stations are assigned to the nearest centroid.
+- **Look-ahead caveat:** station profiles use each station's whole non-test series, including days
+  after a given forecast date. The cluster label is one fixed value per station, so the effect is
+  small, but it is look-ahead and must be stated.
 
 ### 6.3 Row roles
 
@@ -152,42 +157,46 @@ missing day is never treated as "yesterday".
 
 | Feature | Definition |
 |---|---|
-| `lag1`..`lag7` | MDA8 on days t, t−1, …, t−6 |
-| `roll_mean7`, `roll_sd7` | Mean and SD (ddof = 1) over t−6..t; all 7 days required |
+| `lag1`..`lag10` | MDA8 on days t, t−1, …, t−9 |
+| `roll_mean10`, `roll_sd10` | Mean and SD (ddof = 1) over t−9..t; all 10 days required |
 | `doy_sin`, `doy_cos` | Phase of the target date's day of year (period 366; 2024 is a leap year) |
 | `latitude`, `longitude` | Station location |
 | `cluster_1` | Station-cluster indicator (cluster 0 is the reference) |
 | `nbr_mean` | Mean day-t MDA8 at the 5 nearest **development** stations reporting that day (self excluded; haversine distance) |
 
-Feature sets, each with lag set p ∈ {1, 3, 7}:
+Feature sets, each with lag set p ∈ {1, 3, 7, 10}:
 
 - **F1:** lags 1..p
-- **F2:** F1 + `roll_mean7` (only when p < 7, since otherwise it is an exact average of the lags)
-  + `roll_sd7`
+- **F2:** F1 + `roll_mean10` (only when p < 10, since otherwise it is an exact average of the lags)
+  + `roll_sd10`
 - **F3:** F2 + season + location + cluster
 - **F4:** F3 + `nbr_mean`
 
 **Common sample:** every candidate is scored on the same rows, namely those where all features
 and the target exist (≈ 96% of development rows).
 
-**Lag choice evidence** (`outputs/figures/eda_acf_pacf.png`, development data only): after removing
-each station's monthly mean, lag-1 ACF = 0.47, lag-2 PACF = −0.11, and later lags are inside the
-per-station noise band (±0.13). Without that removal, PACF at lags 3–8 is 0.06–0.12; this is the
-slow seasonal level, which `roll_mean7` and the season terms cover. A maximum lag of 7 is therefore
-enough, and CV chooses among 1, 3 and 7.
+**Window choice evidence.** v3.0 chose 7 days from the ACF/PACF *after removing each station's
+monthly mean* (`outputs/figures/eda_acf_pacf.png`): lag-1 ACF = 0.47, lag-2 PACF = −0.11, and later
+lags inside the noise band. That analysis removes exactly what longer windows are good at, which is
+estimating the station's current level. (Before that removal, PACF at lags 3–8 is 0.06–0.12.) The window
+is therefore chosen by CV instead (`python run.py sensitivity`, same rows for every window). Best OLS
+CV MAE: 3 days 5.55, 5 days 5.50, 7 days 5.48, **10 days 5.47**. An audit run with a 14-day CV gap
+found 14 days only about 0.01 ppb better than 10. A 14-day window would also leave Jan 11–14 test
+targets without full history, so **10 days** is used.
 
 ## 8. Methods (`src/models.py`)
 
 | Method | Slides | Role and tuning |
 |---|---|---|
 | Persistence | — | Baseline: prediction = `lag1` |
+| Naive blend | — | Stronger no-fit baseline: prediction = (`lag1` + `roll_mean10`) / 2 |
 | OLS | Class 12–13 | Linear reference |
 | Ridge | Class 14 | α on a 13-point log grid; coefficient paths and df(α) |
 | Lasso | Class 15 | α on a 9-point log grid; coefficient paths, zeroed features |
 | Penalized cubic regression spline | Class 16–17 | Spline basis on `lag1` (quantile knots, linear extrapolation) + other features linear + ridge penalty; tuned over n_knots ∈ {4, 6, 8} × α |
 | Smoothing spline (illustration) | Class 17 | `scipy.interpolate.make_smoothing_spline`, λ by GCV, univariate tomorrow vs today |
 | kNN regression | Class 1–2, 20 | Standardized features; k ∈ {5, …, 200} |
-| PCR | Class 5–6 | PCA on standardized F4 (p = 7), number of components 1..14 |
+| PCR | Class 5–6 | PCA on standardized F4 (p = 10), number of components 1..17 |
 | k-means / MDS | Class 7–11 | Station clusters (§6.2); MDS map of station profiles (exploratory) |
 
 Trend Filtering (v2.0) is removed. It is not in the course slides, and it has no clean next-day
@@ -195,10 +204,10 @@ forecasting rule. It can be mentioned as future work.
 
 ## 9. Validation and Selection (`src/validation.py`)
 
-- **Folds:** the 211 development days are cut into 14-day calendar blocks, assigned round-robin to
+- **Folds:** the 196 development days are cut into 14-day calendar blocks, assigned round-robin to
   5 day-folds so that every fold spans the year. The 150 development stations are split at random
   into 5 station groups. Each of the **25 cells** (station group × day-fold) validates on its
-  stations × its days. It trains on the *other* stations, excluding its days and the **7 days after
+  stations × its days. It trains on the *other* stations, excluding its days and the **10 days after
   each of its blocks** (the same embargo logic as §6.1). Random K-fold would be invalid for
   time-ordered data (Class 17); blocking plus the embargo removes the overlap, and station grouping
   rewards generalization to new stations.
@@ -209,7 +218,13 @@ forecasting rule. It can be mentioned as future work.
   "within 1%" rule.
 - **Primary model:** the one-SE rule applied again across the families' selections, choosing the
   fewest inputs, then the family with fewer tuning parameters (OLS < Ridge < Lasso < PCR < spline <
-  kNN). This was fixed before any test data was used.
+  kNN). Baselines are excluded. **Disclosure:** this rule replaced a first rule ("lowest selected CV
+  MAE") *after* the CV results were seen, because the first rule picked PCR with every component,
+  which is just OLS on all features. No test data was involved.
+- **Paired comparisons** (`paired_vs_primary.csv`): models are also compared cell by cell on the
+  same validation rows (mean difference, paired SE, cells won). The one-SE threshold says whether a
+  model is *close* to the best; the paired comparison says whether a gap is *consistent*. Cells share
+  days, so both SEs are approximate.
 - **Cross-checks (not used for selection, since rows are not exchangeable):** ridge LOOCV shortcut
   (`RidgeCV`) and a GCV smoothing spline.
 - After selection, each chosen spec is refit once on all development rows (Class 17). Model
@@ -217,12 +232,12 @@ forecasting rule. It can be mentioned as future work.
 
 ## 10. Final Fitting and Evaluation (`src/evaluation.py`)
 
-1. `finalize`: refit the selected specs on all 30,270 development rows (150 stations), save them
+1. `finalize`: refit the selected specs on all 27,809 development rows (150 stations), save them
    with joblib, and record a parameter hash.
 2. `evaluate` (**one time only**; `run.py all` never runs it): load the frozen models, check the
    hashes, predict, and check the hashes again. No fit, partial_fit or re-estimation. Inputs update
    daily from observed history; the models do not.
-3. Report three cells (§6.3) on common keys for all models and persistence:
+3. Report three cells (§6.3) on common keys for all models, persistence and the naive blend:
    - Station-macro MAE, pooled MAE, RMSE, mean error (prediction − truth)
    - Improvement vs persistence = 1 − MAE_model / MAE_persistence (same aggregation)
    - Results overall, **per season**, and per station
@@ -253,6 +268,12 @@ claims are made, because errors are correlated across days and stations.
 - The station panel favors year-round monitors.
 - `Observation Percent` is anomalous and unused; completeness is only flagged.
 - The day-t summaries are assumed to be available at forecast time (§4).
+- Most of the gain over persistence comes from the no-fit blend; the fitted models add about 1% on
+  top of it (§16).
+- The cluster feature uses each station's whole non-test series (§6.2).
+- The spline is applied to `lag1` only, so "close to linear" refers to today → tomorrow.
+- The leakage tests use synthetic data; the real pipeline is covered by the reproducibility check
+  and by construction, not by those tests.
 
 ## 13. Course Deliverables
 
@@ -270,7 +291,8 @@ embargo, held-out stations) → EDA and ACF → clusters/MDS → models → CV a
 
 ```text
 config.json                 every tunable value
-run.py                      audit | split | explore | develop | finalize | all ; evaluate (one-time)
+run.py                      audit | split | explore | develop | finalize | sensitivity | all ; evaluate (one-time)
+src/sensitivity.py          CV with 3/5/7/10-day history windows on the same rows (development only)
 src/data.py                 read, audit, clean -> daily_panel
 src/splits.py               test blocks, embargo, eligibility, clusters, holdout, CV layout
 src/features.py             calendar-complete lag / rolling / season / location / neighbor features
@@ -290,7 +312,7 @@ outputs (parquet files, models, prediction CSVs) are git-ignored; rerun `python 
 
 1. Lags equal the value from exactly k calendar days earlier, within the same station.
 2. A missing day makes the following rows' lags and rolling features missing.
-3. No development row's 7-day input window touches a test day; no CV training row's window touches
+3. No development row's input window touches a test day; no CV training row's window touches
    that cell's validation days.
 4. Held-out stations never appear in development rows or CV groups.
 5. Changing a future value does not change any earlier row's inputs.
@@ -298,33 +320,57 @@ outputs (parquet files, models, prediction CSVs) are git-ignored; rerun `python 
 7. Metric arithmetic and error sign are correct on a hand-checked example.
 8. Splines extrapolate linearly, and their knots do not move at prediction time.
 9. The neighbor feature uses development stations only and never the station itself.
-10. Test blocks are reproducible and separated by their embargo; the one-SE rule picks the
-    simplest model within one SE.
+10. Test blocks are reproducible and separated by their embargo; locked blocks are honored and
+    rejected when they overlap the burn-in or the next block's embargo; the one-SE rule picks the
+    simplest model within one SE; the naive blend is the average of today and the rolling mean.
 11. Reproducibility: rerunning `python run.py all` from an empty `outputs/` gives byte-identical
     splits, scores, selections and model hashes (checked 2026-11-06).
 
-## 16. Status (2026-11-06)
+## 16. Status (2026-11-06, v3.1)
 
 | Step | Status |
 |---|---|
 | 1 Repo and requirements | Done |
 | 2 Audit and clean | Done |
-| 3 Split and lock | Done |
+| 3 Split and lock | Done (test weeks and stations identical to v3.0) |
 | 4 Explore | Done (figures in `outputs/figures/eda_*`) |
-| 5–7 Features, models, CV | Done: 543 candidates × 25 cells |
+| 5–7 Features, models, CV | Done: 723 candidates × 25 cells |
 | 8 Refit and freeze | Done |
-| 9 Final test | **Not run.** Waiting for group sign-off on §9 selections |
-| 10 Checks | Tests pass; reproducibility confirmed |
-| 11 Report and slides | To do |
+| Window sensitivity | Done: 3/5/7/10 days on the same rows; 10 is best (§7) |
+| 9 Final test | **Not run.** Waiting for group sign-off |
+| 10 Checks | 14 tests pass; reproducibility confirmed |
+| 11 Report and slides | To do (`key_findings_v2.md`) |
 
-Development (CV) results, station-macro MAE in ppb (lower is better):
+Development (CV) results, station-macro MAE in ppb (lower is better), 27,809 rows:
 
 | Family | Selected spec (one-SE) | CV MAE ± SE | Best spec in family | Best CV MAE |
 |---|---|---|---|---|
-| Persistence | — | 6.03 ± 0.05 | — | — |
-| **OLS (primary)** | F2, lag 1 (`lag1`, `roll_mean7`, `roll_sd7`) | 5.56 ± 0.06 | F4, lags 1..3 | 5.52 |
-| Ridge | F2, lag 1, α = 316 | 5.56 ± 0.06 | F4, lags 1..3 | 5.52 |
-| Lasso | F2, lag 1, α = 0.1 | 5.56 ± 0.06 | F4, lags 1..3 | 5.52 |
-| Spline | F2, lag 1, 4 knots, α = 1 | 5.57 ± 0.06 | F4, lags 1..3 | 5.53 |
-| PCR | F4, lags 1..7, 14 components (= OLS) | 5.52 ± 0.05 | same | 5.52 |
-| kNN | F2, lag 1, k = 200 | 5.67 ± 0.07 | same | 5.67 |
+| Persistence | — | 5.98 ± 0.07 | — | — |
+| Naive blend | (today + 10-day mean) / 2 | 5.54 ± 0.07 | — | — |
+| **OLS (primary)** | F2, lag 1 (`lag1`, `roll_mean10`, `roll_sd10`) | 5.48 ± 0.06 | F4, lags 1..3 | 5.47 |
+| Ridge | F2, lag 1, α = 1000 | 5.50 ± 0.06 | F4, lags 1..3 | 5.47 |
+| Lasso | F2, lag 1, α = 0.316 | 5.50 ± 0.06 | F4, lags 1..3 | 5.46 |
+| Spline | F2, lag 1, 4 knots, α = 10 | 5.51 ± 0.06 | F4, lags 1..3 | 5.49 |
+| PCR | F4, lags 1..10, 17 components (= OLS) | 5.47 ± 0.06 | same | 5.47 |
+| kNN | F2, lag 1, k = 200 | 5.63 ± 0.07 | same | 5.63 |
+
+Paired with the primary model (cells won out of 25): OLS beats the naive blend by 0.06 ppb (20/25)
+and persistence by 0.50 (25/25). The best F4 model beats the primary by only 0.014 (16/25), which
+is not a consistent gain. The one-SE picks for Ridge, Lasso and spline are consistently 0.02–0.03
+worse than OLS: the rule's preference for a stronger penalty costs a little here.
+
+## 17. Changes from v3.0 to v3.1
+
+An audit of v3.0 (2026-11-06) found:
+
+1. **The history window was too short.** v3.0 picked 7 days from an analysis that removes the
+   station level. CV now chooses the window: 10 days beats 7 at every feature set. The test weeks
+   were frozen in the config so they did not move; the embargo and burn-in grew from 7 to 10 days.
+2. **Within-one-SE was read as "not meaningful".** That is not what the SE says. Paired comparisons
+   were added. (With 7 days, F3/F4 were consistently better than F2; with 10 days they no longer are.)
+3. **The baseline was weak.** The no-fit naive blend was added; it captures about 88% of the gain
+   over persistence.
+4. **Disclosures added:** the primary-model rule revision (§9), the cluster look-ahead (§6.2), and
+   the scope of the spline and of the tests (§12).
+
+The v3.0 outputs are archived unchanged in `outputs_v1_7day/`, and `key_findings.md` (v1) is kept.

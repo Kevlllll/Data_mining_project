@@ -1,10 +1,10 @@
 {
-  "n_development_rows": 30270,
+  "n_development_rows": 27809,
   "n_development_stations": 150,
-  "n_candidates": 543,
+  "n_candidates": 723,
   "n_cv_cells": 25,
-  "ridge_df_at_selected": 2.9386776387501703,
+  "ridge_df_at_selected": 2.8231786176160636,
   "lasso_zeroed_features": [],
-  "ridge_cv_selected_alpha": 316,
-  "ridge_loocv_alpha": 10.0
+  "ridge_cv_selected_alpha": 1000,
+  "ridge_loocv_alpha": 31.6
 }

@@ -11,8 +11,8 @@ DOY_PERIOD = 366  # 2024 is a leap year
 
 FEATURE_DESCRIPTIONS = {
     "lag{k}": "MDA8 (ppb) on day t-{km1}, i.e. {k} day(s) before the target date",
-    "roll_mean7": "mean MDA8 over t-6..t (all 7 days required)",
-    "roll_sd7": "SD (ddof=1) of MDA8 over t-6..t (all 7 days required)",
+    "roll_mean{R}": "mean MDA8 over t-{Rm1}..t (all {R} days required)",
+    "roll_sd{R}": "SD (ddof=1) of MDA8 over t-{Rm1}..t (all {R} days required)",
     "doy_sin": "sin(2*pi*day_of_year(target_date)/366)",
     "doy_cos": "cos(2*pi*day_of_year(target_date)/366)",
     "latitude": "station latitude",
@@ -115,6 +115,10 @@ def feature_dictionary(cfg, station_split):
         if col.startswith("lag"):
             k = int(col[3:])
             desc = FEATURE_DESCRIPTIONS["lag{k}"].format(k=k, km1=k - 1)
+        elif col.startswith("roll_"):
+            R = cfg["rolling_window_days"]
+            key = col.replace(str(R), "{R}")
+            desc = FEATURE_DESCRIPTIONS[key].format(R=R, Rm1=R - 1)
         elif col.startswith("cluster_"):
             desc = FEATURE_DESCRIPTIONS["cluster_{c}"].format(c=col.split("_")[1])
         else:
