@@ -1,0 +1,59 @@
+{
+  "raw_rows": 239414,
+  "raw_stations": 1189,
+  "raw_states": 53,
+  "raw_date_range": [
+    "2024-01-01",
+    "2024-10-31"
+  ],
+  "raw_distinct_dates": 305,
+  "sample_durations": {
+    "8-HR RUN AVG BEGIN HOUR": 239414
+  },
+  "pollutant_standards": {
+    "Ozone 8-hour 2015": 239414
+  },
+  "units": {
+    "Parts per million": 239414
+  },
+  "event_types": {
+    "None": 235104,
+    "Included": 4308,
+    "Excluded": 2
+  },
+  "observation_count_multiple_of_17_share": 0.9580308586799435,
+  "observation_percent_range": [
+    6.0,
+    2400.0
+  ],
+  "raw_nonpositive_values": 49,
+  "raw_active_stations_by_month": {
+    "1": 767,
+    "2": 1096,
+    "3": 1135,
+    "4": 1149,
+    "5": 1152,
+    "6": 1144,
+    "7": 625,
+    "8": 585,
+    "9": 417,
+    "10": 80
+  },
+  "multi_poc_station_days": 6751,
+  "multi_poc_stations": 40,
+  "multi_poc_median_abs_diff_ppb": 1.0,
+  "within_station_poc_method_changes": 380,
+  "excluded_rows_by_reason": {
+    "non_primary_poc": 6753,
+    "outside_study_window": 2732,
+    "event_type_excluded_duplicate": 2
+  },
+  "panel_rows": 229927,
+  "panel_stations": 1189,
+  "panel_flags": {
+    "flag_low_completeness": 2956,
+    "flag_nonpositive": 49,
+    "flag_event": 3788
+  },
+  "target": "1st Max Value = daily max 8-hour running average (MDA8), ppb"
+}
