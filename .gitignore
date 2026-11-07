@@ -5,3 +5,15 @@ __pycache__/
 venv/
 .env
 .DS_Store
+
+# Instructor material (not ours to redistribute; repo is public)
+Class*.pdf
+Project*.pdf
+
+# Raw data (79 MB; download instructions in data/README.md)
+daily_44201_2024.csv
+
+# Large or regenerable pipeline outputs (rerun `python run.py all`)
+outputs/**/*.parquet
+outputs/models/
+outputs/**/*predictions*.csv
