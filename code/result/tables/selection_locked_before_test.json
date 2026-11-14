@@ -1,0 +1,34 @@
+[
+  {
+    "family": "Lasso",
+    "lag": 7,
+    "mean_window": 28,
+    "std_window": 14,
+    "parameter": 0.01,
+    "selection_macro_mae": 5.5544703156668325
+  },
+  {
+    "family": "OLS",
+    "lag": 7,
+    "mean_window": 28,
+    "std_window": 14,
+    "parameter": 0.0,
+    "selection_macro_mae": 5.554674610822906
+  },
+  {
+    "family": "Ridge",
+    "lag": 7,
+    "mean_window": 28,
+    "std_window": 14,
+    "parameter": 0.001,
+    "selection_macro_mae": 5.554722396434922
+  },
+  {
+    "family": "Spline_Ridge",
+    "lag": 7,
+    "mean_window": 28,
+    "std_window": 14,
+    "parameter": 0.001,
+    "selection_macro_mae": 5.556170671623299
+  }
+]

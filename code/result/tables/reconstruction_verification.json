@@ -1,0 +1,40 @@
+{
+  "selected_models.csv": {
+    "rows": 4,
+    "max_absolute_difference": 0.0
+  },
+  "test_metrics.csv": {
+    "rows": 12,
+    "max_absolute_difference": 0.0
+  },
+  "all_candidate_ranking.csv": {
+    "rows": 378,
+    "max_absolute_difference": 0.0
+  },
+  "folds_match": true,
+  "notebooks": [
+    {
+      "notebook": "01_data_preparation.ipynb",
+      "executed_code_cells": 4,
+      "markdown_cells": 5
+    },
+    {
+      "notebook": "02_time_series_features.ipynb",
+      "executed_code_cells": 7,
+      "markdown_cells": 6
+    },
+    {
+      "notebook": "03_regression_models.ipynb",
+      "executed_code_cells": 8,
+      "markdown_cells": 7
+    },
+    {
+      "notebook": "04_out_of_sample_evaluation.ipynb",
+      "executed_code_cells": 8,
+      "markdown_cells": 7
+    }
+  ],
+  "raw_archive_hashes_match": true,
+  "tolerance": 1e-08,
+  "all_checks_passed": true
+}

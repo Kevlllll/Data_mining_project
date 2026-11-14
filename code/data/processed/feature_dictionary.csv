@@ -1,0 +1,16 @@
+feature,description
+lag1,Observed ozone 1 days before target
+lag2,Observed ozone 2 days before target
+lag3,Observed ozone 3 days before target
+lag4,Observed ozone 4 days before target
+lag5,Observed ozone 5 days before target
+lag6,Observed ozone 6 days before target
+lag7,Observed ozone 7 days before target
+mean7,Prior 7-day mean
+mean14,Prior 14-day mean
+mean28,Prior 28-day mean
+std7,Prior 7-day sample SD
+std14,Prior 14-day sample SD
+std28,Prior 28-day sample SD
+sin,Annual sine of target-date phase
+cos,Annual cosine of target-date phase

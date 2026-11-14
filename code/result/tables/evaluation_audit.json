@@ -1,0 +1,9 @@
+{
+  "test_rows_per_family": 295815,
+  "test_stations": 1115,
+  "test_previously_disclosed": true,
+  "refit_on_test": false,
+  "same_test_rows_for_all_models": true,
+  "station_separation_checked": true,
+  "checks_passed": true
+}

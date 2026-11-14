@@ -1,0 +1,7 @@
+role,period,rows,observed_targets,stations
+development,development_validation,566905,566905,934
+development,final_test,275717,275717,895
+development,initial_training,587505,587505,971
+held_out,development_validation,145255,145255,235
+held_out,final_test,70267,70267,221
+held_out,initial_training,150209,150209,244

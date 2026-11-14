@@ -1,0 +1,10 @@
+{
+  "target": "daily maximum 8-hour ozone (ppb)",
+  "initial_train_end": "2022-12-31",
+  "development_end": "2024-12-31",
+  "test_start": "2025-01-01",
+  "min_initial_observations": 90,
+  "station_manifest": "data/config/station_split.csv",
+  "test_previously_examined": true,
+  "missing_values_imputed": false
+}

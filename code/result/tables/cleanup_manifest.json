@@ -1,0 +1,45 @@
+{
+  "removed": [
+    {
+      "path": "scripts",
+      "files_removed": 27
+    },
+    {
+      "path": "outputs",
+      "files_removed": 345
+    },
+    {
+      "path": "tmp",
+      "files_removed": 165
+    },
+    {
+      "path": "daily_44201_2021.zip",
+      "action": "relocated to code/data/raw; checksum verified"
+    },
+    {
+      "path": "daily_44201_2022.zip",
+      "action": "relocated to code/data/raw; checksum verified"
+    },
+    {
+      "path": "daily_44201_2023.zip",
+      "action": "relocated to code/data/raw; checksum verified"
+    },
+    {
+      "path": "daily_44201_2024.zip",
+      "action": "relocated to code/data/raw; checksum verified"
+    },
+    {
+      "path": "daily_44201_2025.zip",
+      "action": "relocated to code/data/raw; checksum verified"
+    },
+    {
+      "path": "md_spec_config.json",
+      "action": "removed obsolete generated configuration or plan"
+    },
+    {
+      "path": "代码整理方案.md",
+      "action": "removed obsolete generated configuration or plan"
+    }
+  ],
+  "preserved": "course PDFs, proposal, research requirement documents, original raw archives under code/data/raw, historical methodology note"
+}

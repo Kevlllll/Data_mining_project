@@ -1,0 +1,9 @@
+{
+  "candidate_count": 378,
+  "folds": 24,
+  "train_rows": 965281,
+  "train_stations": 971,
+  "validation_rows": 477250,
+  "test_used": false,
+  "checks_passed": true
+}
